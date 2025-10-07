@@ -5,7 +5,8 @@ set -e
 # Configuration
 TRAEFIK_NETWORK="traefik_traefik"
 TRAEFIK_CERTRESOLVER="webssl"
-NETBIRD_DOMAIN="netbird.domain.com"
+NETBIRD_DOMAIN="netbird.yblis.fr"
+
 export NETBIRD_DOMAIN
 
 # Error handling functions
@@ -453,9 +454,18 @@ services:
       - traefik.http.services.netbird-signal.loadbalancer.server.scheme=h2c
       - traefik.http.routers.netbird-signal.rule=Host(`NETBIRD_DOMAIN_PLACEHOLDER`) && PathPrefix(`/signalexchange.SignalExchange/`)
       - traefik.http.routers.netbird-signal.entrypoints=https
+      - traefik.http.routers.netbird-signal.service=netbird-signal
       - traefik.http.routers.netbird-signal.tls=true
       - traefik.http.routers.netbird-signal.tls.certresolver=NETBIRD_TRAEFIK_SSL
       - traefik.http.routers.netbird-signal.priority=200
+      # WebSocket route for signal - pass through without stripping prefix
+      - traefik.http.services.netbird-signal-ws.loadbalancer.server.port=80
+      - traefik.http.routers.netbird-signal-ws.rule=Host(`NETBIRD_DOMAIN_PLACEHOLDER`) && PathPrefix(`/ws-proxy/signal`)
+      - traefik.http.routers.netbird-signal-ws.entrypoints=https
+      - traefik.http.routers.netbird-signal-ws.service=netbird-signal-ws
+      - traefik.http.routers.netbird-signal-ws.tls=true
+      - traefik.http.routers.netbird-signal-ws.tls.certresolver=NETBIRD_TRAEFIK_SSL
+      - traefik.http.routers.netbird-signal-ws.priority=300
     logging:
       driver: "json-file"
       options:
@@ -525,6 +535,13 @@ services:
       - traefik.http.routers.netbird-management-grpc.tls=true
       - traefik.http.routers.netbird-management-grpc.tls.certresolver=NETBIRD_TRAEFIK_SSL
       - traefik.http.routers.netbird-management-grpc.priority=200
+      # WebSocket route for management - pass through without stripping prefix
+      - traefik.http.routers.netbird-management-ws.rule=Host(`NETBIRD_DOMAIN_PLACEHOLDER`) && PathPrefix(`/ws-proxy/management`)
+      - traefik.http.routers.netbird-management-ws.entrypoints=https
+      - traefik.http.routers.netbird-management-ws.service=netbird-management
+      - traefik.http.routers.netbird-management-ws.tls=true
+      - traefik.http.routers.netbird-management-ws.tls.certresolver=NETBIRD_TRAEFIK_SSL
+      - traefik.http.routers.netbird-management-ws.priority=300
     logging:
       driver: "json-file"
       options:
@@ -566,6 +583,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=traefik_traefik
       - traefik.http.services.zitadel.loadbalancer.server.port=8080
+      - traefik.http.services.zitadel.loadbalancer.server.scheme=h2c
       # OIDC wellknown
       - traefik.http.routers.zitadel-wellknown.rule=Host(`NETBIRD_DOMAIN_PLACEHOLDER`) && PathPrefix(`/.well-known`)
       - traefik.http.routers.zitadel-wellknown.entrypoints=https
