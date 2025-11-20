@@ -83,7 +83,7 @@ wait_api() {
         echo ""
       fi
 
-      curl $FLAGS --fail --connect-timeout 1 -o /dev/null "$INSTANCE_URL/auth/v1/users/me" -H "Authorization: Bearer $PAT"
+      curl $FLAGS --fail --connect-timeout 1 -o /dev/null "http://traefik-netbird/auth/v1/users/me" -H "Authorization: Bearer $PAT" -H "Host: $NETBIRD_DOMAIN"
       if [[ $? -eq 0 ]]; then
         break
       fi
@@ -110,6 +110,7 @@ create_new_project() {
     curl -sS -X POST "$INSTANCE_URL/management/v1/projects" \
       -H "Authorization: Bearer $PAT" \
       -H "Content-Type: application/json" \
+      -H "Host: $NETBIRD_DOMAIN" \
       -d '{"name": "'"$PROJECT_NAME"'"}'
   )
   PARSED_RESPONSE=$(echo "$RESPONSE" | jq -r '.id')
@@ -137,6 +138,7 @@ create_new_application() {
     curl -sS -X POST "$INSTANCE_URL/management/v1/projects/$PROJECT_ID/apps/oidc" \
       -H "Authorization: Bearer $PAT" \
       -H "Content-Type: application/json" \
+      -H "Host: $NETBIRD_DOMAIN" \
       -d '{
     "name": "'"$APPLICATION_NAME"'",
     "redirectUris": [
@@ -173,6 +175,7 @@ create_service_user() {
     curl -sS -X POST "$INSTANCE_URL/management/v1/users/machine" \
       -H "Authorization: Bearer $PAT" \
       -H "Content-Type: application/json" \
+      -H "Host: $NETBIRD_DOMAIN" \
       -d '{
             "userName": "netbird-service-account",
             "name": "Netbird Service Account",
@@ -194,6 +197,7 @@ create_service_user_secret() {
     curl -sS -X PUT "$INSTANCE_URL/management/v1/users/$USER_ID/secret" \
       -H "Authorization: Bearer $PAT" \
       -H "Content-Type: application/json" \
+      -H "Host: $NETBIRD_DOMAIN" \
       -d '{}'
   )
   SERVICE_USER_CLIENT_ID=$(echo "$RESPONSE" | jq -r '.clientId')
@@ -211,6 +215,7 @@ add_organization_user_manager() {
     curl -sS -X POST "$INSTANCE_URL/management/v1/orgs/me/members" \
       -H "Authorization: Bearer $PAT" \
       -H "Content-Type: application/json" \
+      -H "Host: $NETBIRD_DOMAIN" \
       -d '{
             "userId": "'"$USER_ID"'",
             "roles": [
@@ -232,6 +237,7 @@ create_admin_user() {
         curl -sS -X POST "$INSTANCE_URL/management/v1/users/human/_import" \
           -H "Authorization: Bearer $PAT" \
           -H "Content-Type: application/json" \
+          -H "Host: $NETBIRD_DOMAIN" \
           -d '{
                 "userName": "'"$USERNAME"'",
                 "profile": {
@@ -260,6 +266,7 @@ add_instance_admin() {
     curl -sS -X POST "$INSTANCE_URL/admin/v1/members" \
       -H "Authorization: Bearer $PAT" \
       -H "Content-Type: application/json" \
+      -H "Host: $NETBIRD_DOMAIN" \
       -d '{
             "userId": "'"$USER_ID"'",
             "roles": [
@@ -280,6 +287,7 @@ delete_auto_service_user() {
     curl -sS -X GET "$INSTANCE_URL/auth/v1/users/me" \
       -H "Authorization: Bearer $PAT" \
       -H "Content-Type: application/json" \
+      -H "Host: $NETBIRD_DOMAIN"
   )
   USER_ID=$(echo "$RESPONSE" | jq -r '.user.id')
   handle_zitadel_request_response "$USER_ID" "delete_auto_service_user_get_user" "$RESPONSE"
@@ -288,6 +296,7 @@ delete_auto_service_user() {
       curl -sS -X DELETE "$INSTANCE_URL/admin/v1/members/$USER_ID" \
         -H "Authorization: Bearer $PAT" \
         -H "Content-Type: application/json" \
+        -H "Host: $NETBIRD_DOMAIN"
   )
   PARSED_RESPONSE=$(echo "$RESPONSE" | jq -r '.details.changeDate')
   handle_zitadel_request_response "$PARSED_RESPONSE" "delete_auto_service_user_remove_instance_permissions" "$RESPONSE"
@@ -296,6 +305,7 @@ delete_auto_service_user() {
       curl -sS -X DELETE "$INSTANCE_URL/management/v1/orgs/me/members/$USER_ID" \
         -H "Authorization: Bearer $PAT" \
         -H "Content-Type: application/json" \
+        -H "Host: $NETBIRD_DOMAIN"
   )
   PARSED_RESPONSE=$(echo "$RESPONSE" | jq -r '.details.changeDate')
   handle_zitadel_request_response "$PARSED_RESPONSE" "delete_auto_service_user_remove_org_permissions" "$RESPONSE"
@@ -324,6 +334,12 @@ main() {
 
   echo "Starting Traefik stack..."
   cd "$SCRIPT_DIR/traefik-stack"
+  
+  if [ ! -f data/acme.json ] || [ ! -s data/acme.json ]; then
+    echo "{}" > data/acme.json
+  fi
+  chmod 600 data/acme.json
+  
   $DOCKER_COMPOSE_COMMAND up -d
   cd "$SCRIPT_DIR"
   
@@ -730,7 +746,7 @@ sed -i "s/NETBIRD_DOMAIN_PLACEHOLDER/${NETBIRD_DOMAIN}/g; s/NETBIRD_TRAEFIK_SSL/
   # Configuration automatique de Zitadel
   echo "Configuring Zitadel applications..."
 
-  INSTANCE_URL="https://$NETBIRD_DOMAIN"
+  INSTANCE_URL="http://traefik-netbird"
   TOKEN_PATH=./machinekey/zitadel-admin-sa.token
 
   echo -n "Waiting for Zitadel's PAT to be created "
