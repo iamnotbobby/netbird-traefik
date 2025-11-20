@@ -4,9 +4,6 @@
   [entryPoints.https]
     address = ":443"
 
-[api]
-  dashboard = true
-
 [providers.docker]
   endpoint = "unix:///var/run/docker.sock"
 
@@ -17,8 +14,9 @@
   email = "admin@domain.com"
   storage = "acme.json"
   caServer = "https://acme-v02.api.letsencrypt.org/directory"
-  [certificatesResolvers.webssl.acme.httpChallenge]
-    entryPoint = "http"
+  [certificatesResolvers.webssl.acme.dnsChallenge]
+    provider = "cloudflare"
+    delayBeforeCheck = 0
     
 [http.middlewares]
   [http.middlewares.redirection.redirectScheme]

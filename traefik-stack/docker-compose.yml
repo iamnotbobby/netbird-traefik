@@ -5,9 +5,10 @@ services:
     image: traefik:latest
     container_name: traefik
     ports:
-      - '80:80'
-      - '443:443'
-      - '8001:8080'
+      - '8080:80'
+      - '8443:443'
+    environment:
+      - CF_DNS_API_TOKEN=xxx
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data/traefik.toml:/etc/traefik/traefik.toml
@@ -16,22 +17,8 @@ services:
     networks:
       - traefik
     labels:
-# ══════════════════ redirection http vers https     
       - 'traefik.http.middlewares.redirection.redirectscheme.scheme=https'
       - 'traefik.http.middlewares.redirection.redirectscheme.permanent=true'
-# ══════════════════ basic autentification      
-      - "traefik.http.middlewares.auth.basicauth.users=admin:YOURHASHBASICPASSWORD"
-# ══════════════════ Dashboard Traefik        
-      - 'traefik.http.routers.api_http.rule=Host(`traefik.domain.com`)'
-      - 'traefik.http.routers.api_http.entrypoints=http'
-      - 'traefik.http.routers.api_http.middlewares=redirection'
-      - "traefik.http.routers.api_http.service=api@internal"
-
-      - 'traefik.http.routers.api_tls.rule=Host(`traefik.domain.com`)'
-      - 'traefik.http.routers.api_tls.entrypoints=http,https'
-      - 'traefik.http.routers.api_tls.tls.certresolver=webssl'
-      - "traefik.http.routers.api_tls.tls=true"
-      - "traefik.http.routers.api_tls.service=api@internal"
       
 networks:
   traefik:

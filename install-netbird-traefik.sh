@@ -320,6 +320,14 @@ main() {
   check_jq
   DOCKER_COMPOSE_COMMAND=$(check_docker_compose)
 
+  echo "Starting Traefik stack..."
+  cd /traefik-stack
+  $DOCKER_COMPOSE_COMMAND up -d
+  cd - > /dev/null
+  
+  echo "Waiting for Traefik to be ready..."
+  sleep 10
+
   # Check if files already exist
   if [ -f zitadel.env ]; then
     echo "Generated files already exist, if you want to reinitialize the environment, please remove them first."
