@@ -22,4 +22,4 @@ services:
       
 networks:
   traefik:
-    name: traefik_traefik
+    name: traefik_network
