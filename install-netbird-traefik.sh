@@ -320,10 +320,12 @@ main() {
   check_jq
   DOCKER_COMPOSE_COMMAND=$(check_docker_compose)
 
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
   echo "Starting Traefik stack..."
-  cd /traefik-stack
+  cd "$SCRIPT_DIR/traefik-stack"
   $DOCKER_COMPOSE_COMMAND up -d
-  cd - > /dev/null
+  cd "$SCRIPT_DIR"
   
   echo "Waiting for Traefik to be ready..."
   sleep 10

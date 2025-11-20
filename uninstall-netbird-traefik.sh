@@ -20,13 +20,15 @@ check_docker_compose() {
 
 DOCKER_COMPOSE_COMMAND=$(check_docker_compose)
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "Stopping and removing NetBird containers..."
 $DOCKER_COMPOSE_COMMAND down -v
 
 echo "Stopping and removing Traefik stack..."
-cd /traefik-stack
+cd "$SCRIPT_DIR/traefik-stack"
 $DOCKER_COMPOSE_COMMAND down
-cd - > /dev/null
+cd "$SCRIPT_DIR"
 
 echo "Removing NetBird configuration files..."
 rm -rf machinekey/ .env *.env *.yml *.json *.conf
