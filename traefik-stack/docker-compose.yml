@@ -3,7 +3,7 @@ services:
   traefik:
     restart: always
     image: traefik:latest
-    container_name: traefik
+    container_name: traefik-netbird
     ports:
       - '8080:80'
       - '8443:443'
